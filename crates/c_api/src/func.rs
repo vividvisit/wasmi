@@ -132,7 +132,12 @@ pub unsafe extern "C" fn wasm_func_new(
     ty: &wasm_functype_t,
     callback: wasm_func_callback_t,
 ) -> Box<wasm_func_t> {
-    unsafe { create_function(store, ty, move |params, results| callback(params, results)) }
+    // An `extern "C" fn` does not implement Rust's `Fn` traits, so the closure is required to
+    // adapt the C ABI callback to the Rust ABI expected by `create_function`.
+    #[allow(clippy::redundant_closure)]
+    unsafe {
+        create_function(store, ty, move |params, results| callback(params, results))
+    }
 }
 
 /// Creates a new [`wasm_func_t`] of type [`wasm_functype_t`] for the [`wasm_store_t`].
